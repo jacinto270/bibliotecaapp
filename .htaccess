@@ -1,0 +1,8 @@
+# No mostrar el listado de archivos de la carpeta
+Options -Indexes
+
+# Archivos que no se deben poder abrir desde el navegador:
+# la copia de la base de datos y los archivos que solo se incluyen desde otras páginas
+<FilesMatch "\.(sql|md|log)$|^(conexion|funciones|cabecera|pie|prueba)\.php$">
+    Require all denied
+</FilesMatch>
