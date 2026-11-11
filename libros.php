@@ -7,32 +7,58 @@ $genero = (string) filter_input(INPUT_GET, 'genero');
 $genero = in_array($genero, GENEROS, true) ? $genero : '';
 $verBajas = ($_GET['ver'] ?? '') === 'bajas';
 
+// Condiciones comunes a la consulta de libros y al recuento total
+$where = 'WHERE l.activo = ?';
+$parametros = [$verBajas ? 0 : 1];
+
+if ($q !== '') {
+    $patron = '%' . addcslashes($q, '%_\\') . '%';
+    $where .= ' AND (l.titulo LIKE ? OR l.autor LIKE ? OR l.isbn LIKE ?)';
+    array_push($parametros, $patron, $patron, $patron);
+}
+if ($genero !== '') {
+    $where .= ' AND l.genero = ?';
+    $parametros[] = $genero;
+}
+
+// Paginación: POR_PAGINA libros por página (libros.php?pagina=2)
+const POR_PAGINA = 10;
+$recuento = $pdo->prepare("SELECT COUNT(*) FROM libros l $where");
+$recuento->execute($parametros);
+$total = (int) $recuento->fetchColumn();
+$paginas = max(1, (int) ceil($total / POR_PAGINA));
+$pagina = filter_input(INPUT_GET, 'pagina', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: 1;
+$pagina = min($pagina, $paginas);
+$desde = ($pagina - 1) * POR_PAGINA;
+
 // Cada libro con las veces que se ha prestado y, si está prestado ahora,
 // a quién y cuántos días lleva fuera
-$sql = 'SELECT l.id, l.isbn, l.titulo, l.autor, l.anio, l.genero,
+$sql = "SELECT l.id, l.isbn, l.titulo, l.autor, l.anio, l.genero,
                (SELECT COUNT(*) FROM prestamos WHERE libro_id = l.id) AS veces,
                p.lector_id, DATEDIFF(CURDATE(), p.fecha_prestamo) AS dias,
                le.nombre, le.apellidos
         FROM libros l
         LEFT JOIN prestamos p ON p.libro_id = l.id AND p.fecha_devolucion IS NULL
         LEFT JOIN lectores le ON le.id = p.lector_id
-        WHERE l.activo = ?';
-$parametros = [$verBajas ? 0 : 1];
-
-if ($q !== '') {
-    $patron = '%' . addcslashes($q, '%_\\') . '%';
-    $sql .= ' AND (l.titulo LIKE ? OR l.autor LIKE ? OR l.isbn LIKE ?)';
-    array_push($parametros, $patron, $patron, $patron);
-}
-if ($genero !== '') {
-    $sql .= ' AND l.genero = ?';
-    $parametros[] = $genero;
-}
-$sql .= ' ORDER BY l.titulo';
+        $where
+        ORDER BY l.titulo, l.id
+        LIMIT " . POR_PAGINA . " OFFSET $desde";
 
 $consulta = $pdo->prepare($sql);
 $consulta->execute($parametros);
 $libros = $consulta->fetchAll();
+
+// Enlace a otra página conservando la búsqueda, el género y la pestaña
+function url_pagina(int $n): string
+{
+    global $q, $genero, $verBajas;
+    return 'libros.php?' . http_build_query(array_filter([
+        'q' => $q,
+        'genero' => $genero,
+        'ver' => $verBajas ? 'bajas' : '',
+        'pagina' => $n > 1 ? $n : '',
+    ], 'strlen'));
+}
 
 $titulo = 'Catálogo de libros';
 require 'cabecera.php';
@@ -121,6 +147,40 @@ require 'cabecera.php';
       </tbody>
     </table>
   </div>
+
+  <nav class="paginacion" aria-label="Páginas del catálogo">
+    <p class="paginacion__info">
+      Libros <?= $desde + 1 ?>–<?= $desde + count($libros) ?> de <?= $total ?>
+    </p>
+    <?php if ($paginas > 1): ?>
+      <ul>
+        <li>
+          <?php if ($pagina > 1): ?>
+            <a href="<?= e(url_pagina($pagina - 1)) ?>" rel="prev"><span aria-hidden="true">‹</span> Anterior</a>
+          <?php else: ?>
+            <span class="desactivado"><span aria-hidden="true">‹</span> Anterior</span>
+          <?php endif; ?>
+        </li>
+        <?php for ($n = 1; $n <= $paginas; $n++): ?>
+          <?php if ($n === 1 || $n === $paginas || abs($n - $pagina) <= 2): ?>
+            <li>
+              <a href="<?= e(url_pagina($n)) ?>" <?= $n === $pagina ? 'aria-current="page"' : '' ?>
+                 aria-label="Página <?= $n ?>"><?= $n ?></a>
+            </li>
+          <?php elseif (abs($n - $pagina) === 3): ?>
+            <li><span class="desactivado" aria-hidden="true">…</span></li>
+          <?php endif; ?>
+        <?php endfor; ?>
+        <li>
+          <?php if ($pagina < $paginas): ?>
+            <a href="<?= e(url_pagina($pagina + 1)) ?>" rel="next">Siguiente <span aria-hidden="true">›</span></a>
+          <?php else: ?>
+            <span class="desactivado">Siguiente <span aria-hidden="true">›</span></span>
+          <?php endif; ?>
+        </li>
+      </ul>
+    <?php endif; ?>
+  </nav>
 <?php endif; ?>
 
 <?php require 'pie.php'; ?>

@@ -17,12 +17,18 @@ $seccion = [
     'lector.php' => 'lectores.php',
 ][$actual] ?? $actual;
 
+// Tema elegido (cookie que guarda app.js): claro, oscuro o sistema.
+// Se pone en <html> desde PHP para que la página no parpadee al cargar.
+$tema = $_COOKIE['tema'] ?? 'sistema';
+$tema = in_array($tema, ['claro', 'oscuro', 'sistema'], true) ? $tema : 'sistema';
+$temas = ['claro' => ['☀', 'Claro'], 'sistema' => ['◐', 'Sistema'], 'oscuro' => ['☾', 'Oscuro']];
+
 // Mensajes pendientes de mostrar (se borran al leerlos)
 $mensajes = $_SESSION['flash'] ?? [];
 unset($_SESSION['flash']);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-tema="<?= $tema ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -46,6 +52,14 @@ unset($_SESSION['flash']);
           <a href="<?= $url ?>" <?= $url === $seccion ? 'aria-current="page"' : '' ?>><?= $texto ?></a>
         <?php endforeach; ?>
       </nav>
+      <div class="tema" role="group" aria-label="Tema de colores">
+        <?php foreach ($temas as $valor => [$icono, $texto]): ?>
+          <button type="button" data-tema-opcion="<?= $valor ?>" aria-pressed="<?= $valor === $tema ? 'true' : 'false' ?>"
+                  title="Tema <?= mb_strtolower($texto) ?>">
+            <span aria-hidden="true"><?= $icono ?></span><span class="tema__texto"><?= $texto ?></span>
+          </button>
+        <?php endforeach; ?>
+      </div>
     </div>
   </header>
   <main class="contenedor">

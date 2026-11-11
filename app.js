@@ -6,3 +6,18 @@ document.addEventListener('submit', function (evento) {
     evento.preventDefault();
   }
 });
+
+// Selector de tema (claro, oscuro o el del sistema). La elección se guarda
+// en una cookie para que PHP la ponga en <html data-tema> en la siguiente carga.
+document.addEventListener('click', function (evento) {
+  const boton = evento.target.closest('[data-tema-opcion]');
+  if (!boton) {
+    return;
+  }
+  const tema = boton.dataset.temaOpcion;
+  document.documentElement.dataset.tema = tema;
+  document.cookie = 'tema=' + tema + '; path=/; max-age=31536000; samesite=strict';
+  document.querySelectorAll('[data-tema-opcion]').forEach(function (b) {
+    b.setAttribute('aria-pressed', b === boton ? 'true' : 'false');
+  });
+});

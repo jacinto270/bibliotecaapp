@@ -29,8 +29,33 @@
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Tema oscuro: elegido a mano (data-tema="oscuro") o heredado del sistema
+   cuando el tema es "sistema". Las dos reglas tienen las mismas variables. */
+:root { color-scheme: light; }
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+  --fondo: #1a1411;
+  --superficie: #241c17;
+  --superficie-2: #2e241e;
+  --tinta: #f2e8dc;
+  --tinta-2: #b8a796;
+  --borde: #3d3129;
+  --acento: #f0a36d;
+  --acento-hover: #f6bb92;
+  --acento-suave: #3b2519;
+  --cabecera: #120d0a;
+  --cabecera-tinta: #f2e8dc;
+  --bien: #6fd39a;      --bien-fondo: #16301f;
+  --aviso: #f3c35e;     --aviso-fondo: #33270e;
+  --mal: #ff8a7a;       --mal-fondo: #3a1714;
+  --info: #8cbcec;      --info-fondo: #172636;
+  --sombra: 0 1px 2px rgb(0 0 0 / 40%);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-tema="claro"]):not([data-tema="oscuro"]) {
+    color-scheme: dark;
     --fondo: #1a1411;
     --superficie: #241c17;
     --superficie-2: #2e241e;
@@ -243,8 +268,9 @@ a.cifra:hover { color: inherit; border-color: var(--acento); }
 
 td .boton { padding: 0.3rem 0.85rem; font-size: 0.875rem; }
 
+:root[data-tema="oscuro"] :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion])) { color: #1a1411; }
 @media (prefers-color-scheme: dark) {
-  .boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro) { color: #1a1411; }
+  :root:not([data-tema="claro"]):not([data-tema="oscuro"]) :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion])) { color: #1a1411; }
 }
 
 /* ---------- Tablas ---------- */
@@ -386,6 +412,56 @@ input:focus, select:focus { border-color: var(--acento); outline: 3px solid var(
 .joyas li { padding: 0.75rem 1rem; border: 1px solid var(--borde); border-radius: 10px; background: var(--fondo); }
 .joyas .etiqueta { margin-top: 0.4rem; }
 
+/* ---------- Selector de tema ---------- */
+
+.tema {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 14%);
+}
+.tema button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  border: 0;
+  color: var(--cabecera-tinta);
+}
+.tema button:hover { background: rgb(255 255 255 / 12%); color: var(--cabecera-tinta); }
+.tema button[aria-pressed="true"] { background: var(--dorado); color: #2f1d12; }
+.tema__texto { margin-left: 0.15rem; }
+
+/* ---------- Paginación ---------- */
+
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.paginacion__info { margin: 0; color: var(--tinta-2); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.paginacion ul { display: flex; flex-wrap: wrap; gap: 0.3rem; list-style: none; margin: 0; padding: 0; }
+.paginacion a, .paginacion .desactivado {
+  display: inline-block;
+  min-width: 2.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie);
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.paginacion a:hover { border-color: var(--acento); background: var(--acento-suave); }
+.paginacion a[aria-current="page"] { background: var(--acento); border-color: var(--acento); color: var(--superficie); }
+.paginacion .desactivado { color: var(--tinta-2); opacity: 0.55; background: transparent; }
+
 /* ---------- Móvil ---------- */
 
 @media (max-width: 640px) {
@@ -393,4 +469,5 @@ input:focus, select:focus { border-color: var(--acento); outline: 3px solid var(
   th, td { padding: 0.6rem 0.7rem; }
   .tarjeta { padding: 1rem; }
   .ficha .boton { width: 100%; justify-content: center; }
+  .tema__texto { display: none; }
 }
