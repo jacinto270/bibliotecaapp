@@ -1,13 +1,11 @@
 <?php
-// Conexión con la base de datos: la incluyen todas las páginas
+// Plantilla de conexión. Cópiala como conexion.php y rellena tus datos.
+// conexion.php está en .gitignore: las contraseñas nunca se suben a GitHub.
 try {
     $pdo = new PDO(
-        // 'mysql:host=localhost;dbname=biblioteca;charset=utf8mb4',
-        // 'root',
-        // '',
-        'mysql:host=sql101.infinityfree.com;dbname=if0_43416809_appbiblioteca;charset=utf8mb4',
-        'if0_43416809',
-        'wge9Xue11n7tIA',
+        'mysql:host=localhost;dbname=biblioteca;charset=utf8mb4', // servidor y base de datos
+        'root',                                                    // usuario
+        '',                                                        // contraseña
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
