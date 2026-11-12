@@ -10,6 +10,13 @@ $menu = [
     'estadisticas.php' => 'Estadísticas',
 ];
 
+// Sin sesión no se enseña el menú; la gestión de usuarios, solo a los admin
+if (!$usuarioActual) {
+    $menu = [];
+} elseif ($usuarioActual['rol'] === 'admin') {
+    $menu['usuarios.php'] = 'Usuarios';
+}
+
 // Páginas que cuelgan de otra sección del menú
 $seccion = [
     'libro_nuevo.php' => 'libros.php',
@@ -47,11 +54,13 @@ unset($_SESSION['flash']);
           <small>Leer nos une</small>
         </span>
       </a>
-      <nav aria-label="Menú principal">
-        <?php foreach ($menu as $url => $texto): ?>
-          <a href="<?= $url ?>" <?= $url === $seccion ? 'aria-current="page"' : '' ?>><?= $texto ?></a>
-        <?php endforeach; ?>
-      </nav>
+      <?php if ($menu): ?>
+        <nav aria-label="Menú principal">
+          <?php foreach ($menu as $url => $texto): ?>
+            <a href="<?= $url ?>" <?= $url === $seccion ? 'aria-current="page"' : '' ?>><?= $texto ?></a>
+          <?php endforeach; ?>
+        </nav>
+      <?php endif; ?>
       <div class="tema" role="group" aria-label="Tema de colores">
         <?php foreach ($temas as $valor => [$icono, $texto]): ?>
           <button type="button" data-tema-opcion="<?= $valor ?>" aria-pressed="<?= $valor === $tema ? 'true' : 'false' ?>"
@@ -60,6 +69,13 @@ unset($_SESSION['flash']);
           </button>
         <?php endforeach; ?>
       </div>
+      <?php if ($usuarioActual): ?>
+        <form action="salir.php" method="post" class="sesion">
+          <?= campo_csrf() ?>
+          <span class="sesion__nombre" title="@<?= e($usuarioActual['usuario']) ?>"><?= e($usuarioActual['nombre']) ?></span>
+          <button type="submit">Salir</button>
+        </form>
+      <?php endif; ?>
     </div>
   </header>
   <main class="contenedor">

@@ -2,7 +2,10 @@
 Options -Indexes
 
 # Archivos que no se deben poder abrir desde el navegador:
-# la copia de la base de datos y los archivos que solo se incluyen desde otras páginas
-<FilesMatch "\.(sql|md|log)$|^(conexion|funciones|cabecera|pie|prueba)\.php$">
+# las copias de la base de datos, la configuración y los archivos que solo se incluyen desde otras páginas
+<FilesMatch "\.(sql|md|log|ini|bak)$|^(conexion|funciones|cabecera|pie|prueba)\.php$|^\.">
     Require all denied
 </FilesMatch>
+
+# Ni la carpeta .git ni otros archivos ocultos (por si se suben al servidor)
+RedirectMatch 404 /\.(?!well-known/)

@@ -1,7 +1,6 @@
 -- 50 libros más para el catálogo (8 géneros)
--- Importar en phpMyAdmin sobre la base de datos `biblioteca` ya creada: NO borra nada.
+-- Importar en phpMyAdmin con la base de datos de la aplicación seleccionada: NO borra nada.
 
-USE biblioteca;
 
 INSERT INTO libros (isbn, titulo, autor, anio, genero) VALUES
   ('978-84-0000-010-3', 'Don Quijote de la Mancha', 'Miguel de Cervantes', 1605, 'novela'),

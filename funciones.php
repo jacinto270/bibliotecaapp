@@ -20,10 +20,15 @@ header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; objec
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 header('Referrer-Policy: same-origin');
+// Que los buscadores no indexen ni sigan ninguna página de la aplicación
+header('X-Robots-Tag: noindex, nofollow');
 
 // ---------------------------------------------------------------------------
 // Sesión con cookie protegida
 // ---------------------------------------------------------------------------
+// Solo se aceptan identificadores de sesión creados por el servidor
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
 session_set_cookie_params([
     'httponly' => true,     // JavaScript no puede leer la cookie
     'samesite' => 'Strict', // otras webs no pueden enviarla
@@ -172,4 +177,102 @@ function error_campo(array $errores, string $campo): string
 function marca_error(array $errores, string $campo): string
 {
     return isset($errores[$campo]) ? 'aria-invalid="true" aria-describedby="error-' . $campo . '"' : '';
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y control de acceso
+// ---------------------------------------------------------------------------
+// Todas las páginas exigen haber iniciado sesión, salvo las que definen
+// PAGINA_PUBLICA antes de incluir conexion.php (entrar.php y crear_cuenta.php).
+// Así, una página nueva queda protegida aunque se nos olvide.
+
+const ROLES = ['admin', 'bibliotecario'];
+const INACTIVIDAD_MAX = 2 * 60 * 60;   // la sesión caduca tras 2 horas sin uso
+const INTENTOS_MAX = 5;                 // intentos fallidos de entrar...
+const INTENTOS_MINUTOS = 15;            // ...en estos minutos, antes de bloquear
+const CLAVE_MIN = 10;                   // longitud mínima de la contraseña
+
+// Termina la sesión y cambia su identificador
+function cerrar_sesion(): void
+{
+    $_SESSION = [];
+    session_regenerate_id(true);
+}
+
+// Usuario con la sesión iniciada, o null. Se comprueba en la base de datos
+// en cada petición: si un admin lo desactiva, pierde el acceso al momento.
+function usuario_actual(PDO $pdo): ?array
+{
+    $id = $_SESSION['usuario_id'] ?? null;
+    if (!is_int($id)) {
+        return null;
+    }
+    if (time() - ($_SESSION['ultimo_uso'] ?? 0) > INACTIVIDAD_MAX) {
+        cerrar_sesion();
+        flash('error', 'La sesión ha caducado por inactividad. Vuelve a entrar.');
+        return null;
+    }
+    $consulta = $pdo->prepare('SELECT id, usuario, nombre, rol FROM usuarios WHERE id = ? AND activo = 1');
+    $consulta->execute([$id]);
+    $usuario = $consulta->fetch();
+    if (!$usuario) {
+        cerrar_sesion();
+        return null;
+    }
+    $_SESSION['ultimo_uso'] = time();
+    return $usuario;
+}
+
+// Solo para administradores
+function requerir_admin(?array $usuario): void
+{
+    if (($usuario['rol'] ?? '') !== 'admin') {
+        http_response_code(403);
+        exit('No tienes permiso para ver esta página.');
+    }
+}
+
+// Nombre de usuario: minúsculas, números, punto, guion y guion bajo (3 a 30)
+function usuario_valido(string $usuario): bool
+{
+    return (bool) preg_match('/^[a-z0-9._-]{3,30}$/', $usuario);
+}
+
+// IP del visitante (para limitar intentos)
+function ip_cliente(): string
+{
+    return substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+}
+
+// ¿Se han superado $max intentos de este tipo en los últimos $minutos?
+// Se cuenta por IP y, si se indica, también por nombre de usuario.
+function demasiados_intentos(PDO $pdo, string $tipo, int $max, int $minutos, string $usuario = ''): bool
+{
+    $consulta = $pdo->prepare(
+        'SELECT COUNT(*) FROM intentos
+         WHERE tipo = ? AND momento > NOW() - INTERVAL ? MINUTE AND (ip = ? OR (? <> \'\' AND usuario = ?))'
+    );
+    $consulta->execute([$tipo, $minutos, ip_cliente(), $usuario, $usuario]);
+    return (int) $consulta->fetchColumn() >= $max;
+}
+
+function anotar_intento(PDO $pdo, string $tipo, string $usuario = ''): void
+{
+    $pdo->prepare('INSERT INTO intentos (tipo, ip, usuario, momento) VALUES (?, ?, ?, NOW())')
+        ->execute([$tipo, ip_cliente(), substr($usuario, 0, 30)]);
+    // Limpieza: los intentos de hace más de un día ya no sirven
+    $pdo->exec('DELETE FROM intentos WHERE momento < NOW() - INTERVAL 1 DAY');
+}
+
+$usuarioActual = isset($pdo) ? usuario_actual($pdo) : null;
+
+if (!defined('PAGINA_PUBLICA') && !$usuarioActual) {
+    // Recordar la página pedida (solo si es una página de la aplicación) para volver tras entrar
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $pedida = basename($_SERVER['SCRIPT_NAME']) . (($_SERVER['QUERY_STRING'] ?? '') !== '' ? '?' . $_SERVER['QUERY_STRING'] : '');
+        if (preg_match('/^[a-z_]+\.php(\?[^\s]*)?$/', $pedida)) {
+            $_SESSION['volver'] = $pedida;
+        }
+    }
+    redirigir('entrar.php');
 }

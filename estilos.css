@@ -268,9 +268,9 @@ a.cifra:hover { color: inherit; border-color: var(--acento); }
 
 td .boton { padding: 0.3rem 0.85rem; font-size: 0.875rem; }
 
-:root[data-tema="oscuro"] :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion])) { color: #1a1411; }
+:root[data-tema="oscuro"] :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion]):not(.sesion button)) { color: #1a1411; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]):not([data-tema="oscuro"]) :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion])) { color: #1a1411; }
+  :root:not([data-tema="claro"]):not([data-tema="oscuro"]) :is(.boton:not(.boton--secundario):not(.boton--peligro), button:not(.boton--secundario):not(.boton--peligro):not([data-tema-opcion]):not(.sesion button)) { color: #1a1411; }
 }
 
 /* ---------- Tablas ---------- */
@@ -462,7 +462,26 @@ input:focus, select:focus { border-color: var(--acento); outline: 3px solid var(
 .paginacion a[aria-current="page"] { background: var(--acento); border-color: var(--acento); color: var(--superficie); }
 .paginacion .desactivado { color: var(--tinta-2); opacity: 0.55; background: transparent; }
 
+/* ---------- Sesión y acceso ---------- */
+
+.sesion { display: inline-flex; align-items: center; gap: 0.5rem; margin: 0; }
+.sesion__nombre { font-size: 0.875rem; color: var(--cabecera-tinta); opacity: 0.85; }
+.sesion button {
+  padding: 0.3rem 0.85rem;
+  font-size: 0.8rem;
+  background: transparent;
+  border-color: rgb(255 255 255 / 30%);
+  color: var(--cabecera-tinta);
+}
+.sesion button:hover { background: rgb(255 255 255 / 12%); border-color: var(--dorado); color: var(--cabecera-tinta); }
+
+.acceso { max-width: 420px; }
+.acceso .formulario button[type="submit"] { width: 100%; justify-content: center; }
+
+.acciones { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
 /* ---------- Móvil ---------- */
+
 
 @media (max-width: 640px) {
   .cabecera nav { width: 100%; overflow-x: auto; flex-wrap: nowrap; }

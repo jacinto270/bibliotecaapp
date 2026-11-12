@@ -37,6 +37,27 @@ CREATE TABLE prestamos (
   FOREIGN KEY (lector_id) REFERENCES lectores(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
 
+-- Usuarios de la aplicación (la primera cuenta creada en crear_cuenta.php es la de administrador)
+CREATE TABLE IF NOT EXISTS usuarios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario VARCHAR(30) NOT NULL UNIQUE,
+  nombre VARCHAR(60) NOT NULL,
+  clave VARCHAR(255) NOT NULL,            -- hash de password_hash(), nunca la contraseña
+  rol VARCHAR(15) NOT NULL DEFAULT 'bibliotecario',
+  activo TINYINT(1) NOT NULL DEFAULT 0,   -- las cuentas nuevas esperan la aprobación de un admin
+  creado DATETIME NOT NULL,
+  ultimo_acceso DATETIME
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+CREATE TABLE IF NOT EXISTS intentos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  tipo VARCHAR(10) NOT NULL,              -- 'entrar' (contraseña fallida) o 'alta' (cuenta pedida)
+  ip VARCHAR(45) NOT NULL,
+  usuario VARCHAR(30) NOT NULL DEFAULT '',
+  momento DATETIME NOT NULL,
+  INDEX (tipo, momento)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
 INSERT INTO libros (id, isbn, titulo, autor, anio, genero) VALUES
   (1, '978-84-0000-001-1', 'Cien años de soledad', 'Gabriel García Márquez', 1967, 'novela'),
   (2, '978-84-0000-002-8', 'El viejo y el mar', 'Ernest Hemingway', 1952, 'novela'),
